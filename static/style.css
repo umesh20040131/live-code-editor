@@ -1,0 +1,24 @@
+#searchInput {
+  padding: 8px;
+  margin-bottom: 10px;
+  width: 100%;
+}
+#results div {
+  padding: 5px;
+  border-bottom: 1px solid #ccc;
+  cursor: pointer;
+}
+.user-search-bar {
+  position: relative;
+  display: inline-block;
+}
+.user-search-bar input {
+  font-size: 1rem;
+}
+#userSearchResults {
+  min-width: 180px;
+  box-shadow: 0 4px 16px rgba(77,107,255,0.08);
+}
+#userSearchResults div:hover {
+  background: #f0f4ff;
+}

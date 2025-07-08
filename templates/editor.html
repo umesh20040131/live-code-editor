@@ -233,6 +233,22 @@
       transform: translateX(26px);
     }
     
+    #userSearchResults,
+    #userSearchResults div,
+    #userSearchResults a {
+      color: #222 !important;
+      background: #fff !important;
+    }
+
+    #userSearchResults a {
+      text-decoration: none;
+      display: block;
+    }
+
+    #userSearchResults div:hover {
+      background: #f0f4ff !important;
+    }
+    
     @media (max-width: 768px) {
       .editor {
         flex-direction: column;
@@ -250,19 +266,30 @@
 </head>
 <body>
   <div class="container">
-    <header>
-      <div class="logo">
-        <i class="fas fa-code"></i>
-        <h2>Live HTML/CSS/JS Editor</h2>
+    <header style="display: flex; align-items: center; justify-content: space-between;">
+  <div class="logo" style="display: flex; align-items: center;">
+    <i class="fas fa-code"></i>
+    <h2 style="margin-left: 8px;">Live HTML/CSS/JS Editor</h2>
+  </div>
+  <div style="display: flex; align-items: center; gap: 24px;">
+    <!-- Search bar goes here -->
+    <div class="user-search-bar" style="position: relative;">
+      <input type="text" id="userSearchInput" placeholder="Search users..." autocomplete="off"
+        style="padding:8px; border-radius:6px; border:1px solid #ccc; width:180px;">
+      <div id="userSearchResults"
+        style="background:#fff; border:1px solid #ccc; border-radius:6px; max-height:180px; overflow-y:auto; display:none; position:absolute; z-index:1000; min-width:180px;">
       </div>
-      <div class="auto-run-toggle">
-        <span>Auto-run</span>
-        <label class="toggle-switch">
-          <input type="checkbox" id="autoRunToggle" checked>
-          <span class="slider"></span>
-        </label>
-      </div>
-    </header>
+    </div>
+    <!-- Auto-run toggle -->
+    <div class="auto-run-toggle" style="display: flex; align-items: center;">
+      <span style="color: #fff; margin-right: 8px;">Auto-run</span>
+      <label class="toggle-switch">
+        <input type="checkbox" id="autoRunToggle" checked>
+        <span class="slider"></span>
+      </label>
+    </div>
+  </div>
+</header>
 
     <div style="margin-bottom: 10px;">
       <span>
@@ -303,21 +330,21 @@
             <h4 class="codebox-title"><i class="fab fa-html5"></i> HTML</h4>
             <button class="secondary" type="button" onclick="insertHTMLTemplate()"><i class="fas fa-plus"></i> Template</button>
           </div>
-          <textarea id="htmlEditor" name="html">{{ project.html_code if project else '' }}</textarea>
+          <textarea id="htmlEditor" name="html">{{ project.html_code if project }}</textarea>
         </div>
         <div class="codebox">
           <div class="codebox-header">
             <h4 class="codebox-title"><i class="fab fa-css3-alt"></i> CSS</h4>
             <button class="secondary" type="button" onclick="insertCSSTemplate()"><i class="fas fa-plus"></i> Template</button>
           </div>
-          <textarea id="cssEditor" name="css">{{ project.css_code if project else '' }}</textarea>
+          <textarea id="cssEditor" name="css">{{ project.css_code if project }}</textarea>
         </div>
         <div class="codebox">
           <div class="codebox-header">
             <h4 class="codebox-title"><i class="fab fa-js"></i> JavaScript</h4>
             <button class="secondary" type="button" onclick="insertJSTemplate()"><i class="fas fa-plus"></i> Template</button>
           </div>
-          <textarea id="jsEditor" name="js">{{ project.js_code if project else '' }}</textarea>
+          <textarea id="jsEditor" name="js">{{ project.js_code if project }}</textarea>
         </div>
       </div>
       <div class="button-group">
@@ -344,6 +371,7 @@
       <div id="statusMessage">Ready</div>
       <div>Last saved: <span id="lastSaved">Never</span></div>
     </div>
+
   </div>
 
   <!-- CodeMirror JS -->
@@ -555,5 +583,96 @@ document.addEventListener('DOMContentLoaded', function() {
     init();
 
   </script>
+  <script>
+const searchInput = document.getElementById('userSearchInput');
+const resultsBox = document.getElementById('userSearchResults');
+const RECENT_KEY = 'recentUserSearches';
+const MAX_RECENT = 5;
+
+// Save to recent searches
+function saveRecentSearch(username) {
+  let recent = JSON.parse(localStorage.getItem(RECENT_KEY) || '[]');
+  recent = recent.filter(u => u !== username); // Remove if already exists
+  recent.unshift(username); // Add to front
+  if (recent.length > MAX_RECENT) recent = recent.slice(0, MAX_RECENT);
+  localStorage.setItem(RECENT_KEY, JSON.stringify(recent));
+}
+
+// Show recent searches
+function showRecentSearches() {
+  let recent = JSON.parse(localStorage.getItem(RECENT_KEY) || '[]');
+  if (recent.length === 0) {
+    resultsBox.style.display = 'none';
+    resultsBox.innerHTML = '';
+    return;
+  }
+  resultsBox.innerHTML = recent.map(u =>
+    `<a href="/profile/${u}" style="text-decoration:none; color:inherit;">
+      <div style="padding:8px; border-bottom:1px solid #eee; cursor:pointer;">
+        <i class="fas fa-history"></i> ${u}
+      </div>
+    </a>`
+  ).join('');
+  resultsBox.style.display = 'block';
+}
+
+// Search input logic
+searchInput.addEventListener('focus', function() {
+  if (this.value.trim().length < 2) {
+    showRecentSearches();
+  }
+});
+searchInput.addEventListener('input', function() {
+  const query = this.value.trim();
+  if (query.length < 2) {
+    showRecentSearches();
+    return;
+  }
+  fetch(`/search?query=${encodeURIComponent(query)}`)
+    .then(res => res.json())
+    .then(users => {
+      if (users.length === 0) {
+        resultsBox.innerHTML = '<div style="padding:8px; color:#222;">No users found</div>';
+      } else {
+        resultsBox.innerHTML = users.map(u => 
+          `<a href="/profile/${u.username}" style="text-decoration:none; color:#222;" data-username="${u.username}">
+            <div style="padding:8px; border-bottom:1px solid #eee; cursor:pointer;">
+              <i class="fas fa-user"></i> ${u.username}
+            </div>
+          </a>`
+        ).join('');
+      }
+      resultsBox.style.display = 'block';
+    });
+});
+
+// Save to history when a suggestion is clicked
+resultsBox.addEventListener('click', function(e) {
+  let target = e.target;
+  while (target && target.tagName !== 'A' && target !== resultsBox) {
+    target = target.parentElement;
+  }
+  if (target && target.tagName === 'A') {
+    // Save username from both search and history
+    const username = target.getAttribute('href').split('/profile/')[1];
+    if (username) saveRecentSearch(username);
+  }
+});
+
+// Show history on focus if input is empty
+searchInput.addEventListener('focus', function() {
+  if (this.value.trim().length < 2) {
+    showRecentSearches();
+  }
+});
+
+// Hide results when clicking outside
+document.addEventListener('click', function(e) {
+  if (!searchInput.contains(e.target) && !resultsBox.contains(e.target)) {
+    resultsBox.style.display = 'none';
+  }
+});
+</script> 
+
 </body>
 </html>

@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{{ user.username }}'s Work | LiveCode Editor</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/theme/dracula.min.css">
+  <style>
+    body {
+      background: linear-gradient(120deg, #4d6bff 0%, #6b47ff 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      margin: 0;
+    }
+    .profile-container {
+      background: #fff;
+      padding: 2.5rem 2rem 2rem 2rem;
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(77,107,255,0.15);
+      width: 700px;
+      max-width: 98vw;
+      text-align: center;
+    }
+    .profile-container h2 {
+      color: #4d6bff;
+      margin-bottom: 0.5rem;
+    }
+    .profile-container .username {
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 1.5rem;
+    }
+    .code-section {
+      margin-bottom: 1.5rem;
+      text-align: left;
+    }
+    .code-section h3 {
+      color: #6b47ff;
+      margin-bottom: 0.3rem;
+      font-size: 1.1rem;
+    }
+    .back-link {
+      display: inline-block;
+      margin-top: 1.5rem;
+      color: #6b47ff;
+      text-decoration: none;
+      font-size: 0.98rem;
+      transition: color 0.2s;
+    }
+    .back-link:hover {
+      color: #4d6bff;
+      text-decoration: underline;
+    }
+    .no-project {
+      color: #888;
+      font-style: italic;
+      margin: 2rem 0;
+    }
+    .CodeMirror {
+      border-radius: 8px;
+      border: 1px solid #eee;
+      font-size: 1rem;
+      height: auto;
+      min-height: 60px;
+      background: #282a36;
+    }
+  </style>
+</head>
+<body>
+  <div class="profile-container">
+    <h2><i class="fas fa-user"></i> {{ user.username }}'s Work</h2>
+    <div class="username">Profile</div>
+    {% if project %}
+      <div class="code-section">
+        <h3><i class="fab fa-html5"></i> HTML</h3>
+        <textarea id="htmlView">{{ project.html_code or '' }}</textarea>
+      </div>
+      <div class="code-section">
+        <h3><i class="fab fa-css3-alt"></i> CSS</h3>
+        <textarea id="cssView">{{ project.css_code or '' }}</textarea>
+      </div>
+      <div class="code-section">
+        <h3><i class="fab fa-js"></i> JavaScript</h3>
+        <textarea id="jsView">{{ project.js_code or '' }}</textarea>
+      </div>
+      <!-- Output Preview -->
+      <div class="code-section">
+        <h3><i class="fas fa-eye"></i> Output</h3>
+        <iframe id="profilePreview" style="width:100%;min-height:300px;border-radius:8px;border:1px solid #eee;background:#fff;"></iframe>
+      </div>
+    {% else %}
+      <div class="no-project">This user has not saved any code yet.</div>
+    {% endif %}
+    <a class="back-link" href="{{ url_for('editor') }}"><i class="fas fa-arrow-left"></i> Back to Editor</a>
+  </div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/xml/xml.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/css/css.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/javascript/javascript.min.js"></script>
+  <script>
+    // Read-only CodeMirror for each code section
+    if (document.getElementById('htmlView')) {
+      CodeMirror.fromTextArea(document.getElementById('htmlView'), {
+        mode: 'xml',
+        theme: 'dracula',
+        lineNumbers: true,
+        readOnly: true,
+        htmlMode: true
+      });
+    }
+    if (document.getElementById('cssView')) {
+      CodeMirror.fromTextArea(document.getElementById('cssView'), {
+        mode: 'css',
+        theme: 'dracula',
+        lineNumbers: true,
+        readOnly: true
+      });
+    }
+    if (document.getElementById('jsView')) {
+      CodeMirror.fromTextArea(document.getElementById('jsView'), {
+        mode: 'javascript',
+        theme: 'dracula',
+        lineNumbers: true,
+        readOnly: true
+      });
+    }
+
+    // Output preview logic
+    {% if project %}
+    function updateProfilePreview() {
+      var html = {{ project.html_code|tojson|safe }};
+      var css = {{ project.css_code|tojson|safe }};
+      var js = {{ project.js_code|tojson|safe }};
+      var output = `
+        <html>
+          <head>
+            <style>${css}</style>
+          </head>
+          <body>
+            ${html}
+            <script>${js}<\/script>
+          </body>
+        </html>
+      `;
+      var iframe = document.getElementById('profilePreview');
+      if (iframe) {
+        iframe.srcdoc = output;
+      }
+    }
+    updateProfilePreview();
+    {% endif %}
+  </script>
+</body>
+</html>

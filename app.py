@@ -1,8 +1,7 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from models import db, User, Project
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
-
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'ce258b349b3421173f5157dad2b4f815f791cb09c02cbf8dfd95eb2e5b3de592'
@@ -70,13 +69,31 @@ def editor():
         flash("Code saved!")
     return render_template('editor.html', project=project)
 
-'''@app.route('/show_users')
+@app.route('/profile/<username>')
+@login_required
+def profile(username):
+    user = User.query.filter_by(username=username).first_or_404()
+    project = Project.query.filter_by(user_id=user.id).first()
+    return render_template('profile.html', user=user, project=project)
+
+# Uncomment for debugging: Show all users (do not use in production)
+'''
+@app.route('/show_users')
 def show_users():
     users = User.query.all()
-    return '<br>'.join([f"{u.id}: {u.username}" for u in users])'''
+    return '<br>'.join([f"{u.id}: {u.username}" for u in users])
+'''
+
+@app.route('/search')
+def search():
+    query = request.args.get('query', '').strip()
+    if not query:
+        return jsonify([])
+    users = User.query.filter(User.username.ilike(f"%{query}%")).all()
+    results = [{"id": user.id, "username": user.username} for user in users]
+    return jsonify(results)
 
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
     app.run(debug=True)
-
