@@ -120,8 +120,8 @@
 </head>
 <body>
   <div class="profile-container">
-    <div style="text-align: center; margin-bottom: 20px;">
-      <img src="{{ url_for('static', filename='images/logo.png') }}" alt="CodeLitePad Logo" style="width: 40px; height: 40px;">
+    <div class="logo-container">
+      <img src="{{ url_for('static', filename='images/logo.webp') }}" alt="CodeLitePad Logo" style="width: 80px; height: 80px; object-fit: contain;">
     </div>
     <h2>{{ user.username }}'s Work</h2>
     <div class="username">Profile</div>

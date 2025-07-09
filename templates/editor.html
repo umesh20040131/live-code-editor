@@ -54,7 +54,20 @@
     .logo {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 15px;
+    }
+    
+    .logo img {
+      width: 40px;
+      height: 40px;
+      object-fit: contain;
+    }
+    
+    .logo-text {
+      font-size: 1.8rem;
+      color: #fff;
+      margin: 0;
+      font-weight: 600;
     }
     
     .editor {
@@ -267,9 +280,8 @@
 </head>
 <body>
   <div class="container">
-    <header style="display: flex; align-items: center; justify-content: space-between;">
-      <div class="logo" style="display: flex; align-items: center;">
-        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="CodeLitePad Logo" class="logo-img">
+    <header>
+      <div class="logo">
         <h2 class="logo-text">CodeLitePad</h2>
       </div>
       <div style="display: flex; align-items: center; gap: 24px;">
