@@ -11,11 +11,14 @@ db.init_app(app)
 
 login_manager = LoginManager()
 login_manager.init_app(app)
-login_manager.login_view = 'login'
+login_manager.login_view = 'login'  # type: ignore
 
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(int(user_id))
+    try:
+        return User.query.get(int(user_id))
+    except:
+        return None
 
 @app.route('/')
 def home():
@@ -24,15 +27,20 @@ def home():
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
-        if User.query.filter_by(username=request.form['username']).first():
-            flash("Username already exists.")
+        try:
+            if User.query.filter_by(username=request.form['username']).first():
+                flash("Username already exists.")
+                return redirect(url_for('register'))
+            hashed_pw = generate_password_hash(request.form['password'])
+            new_user = User(username=request.form['username'], password=hashed_pw)
+            db.session.add(new_user)
+            db.session.commit()
+            flash("Registered successfully. Please log in.")
+            return redirect(url_for('login'))
+        except Exception as e:
+            db.session.rollback()
+            flash("An error occurred during registration. Please try again.")
             return redirect(url_for('register'))
-        hashed_pw = generate_password_hash(request.form['password'])
-        new_user = User(username=request.form['username'], password=hashed_pw)
-        db.session.add(new_user)
-        db.session.commit()
-        flash("Registered successfully. Please log in.")
-        return redirect(url_for('login'))
     return render_template('register.html')
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -54,32 +62,50 @@ def logout():
 @app.route('/editor', methods=['GET', 'POST'])
 @login_required
 def editor():
-    # On POST, get project_id from form; on GET, from query string
-    project_id = request.form.get('project_id') if request.method == 'POST' else request.args.get('project_id')
-    if project_id:
-        project = Project.query.filter_by(id=project_id, user_id=current_user.id).first()
-    else:
-        project = Project.query.filter_by(user_id=current_user.id).first()
-    if not project:
-        # Create a fresh project for new users
-        project = Project(html_code='', css_code='', js_code='', user_id=current_user.id)
-        db.session.add(project)
-        db.session.commit()
-    if request.method == 'POST':
-        html = request.form.get('html')
-        css = request.form.get('css')
-        js = request.form.get('js')
-        project.html_code = html
-        project.css_code = css
-        project.js_code = js
-        db.session.commit()
-        flash("Code saved!")
-    return render_template('editor.html', project=project)
+    try:
+        # On POST, get project_id from form; on GET, from query string
+        project_id = request.form.get('project_id') if request.method == 'POST' else request.args.get('project_id')
+        if project_id:
+            project = Project.query.filter_by(id=project_id, user_id=current_user.id).first()
+        else:
+            project = Project.query.filter_by(user_id=current_user.id).first()
+        
+        if not project:
+            # Create a fresh project for new users
+            try:
+                project = Project(html_code='', css_code='', js_code='', user_id=current_user.id)
+                db.session.add(project)
+                db.session.commit()
+            except Exception as e:
+                flash("Error creating new project. Please try again.")
+                return redirect(url_for('editor'))
+        
+        if request.method == 'POST':
+            try:
+                html = request.form.get('html')
+                css = request.form.get('css')
+                js = request.form.get('js')
+                project.html_code = html
+                project.css_code = css
+                project.js_code = js
+                db.session.commit()
+                flash("Code saved!")
+            except Exception as e:
+                db.session.rollback()
+                flash("Error saving code. Please try again.")
+        return render_template('editor.html', project=project)
+    except Exception as e:
+        flash("An error occurred. Please try again.")
+        return redirect(url_for('home'))
 
 @app.route('/profile/<username>')
 @login_required
 def profile(username):
-    user = User.query.filter_by(username=username).first_or_404()
+    user = User.query.filter_by(username=username).first()
+    if not user:
+        flash("User not found.")
+        return redirect(url_for('editor'))
+    
     project = Project.query.filter_by(user_id=user.id).first()
     friendship = None
     if user.id != current_user.id:
@@ -102,34 +128,61 @@ def profile(username):
 @app.route('/add_friend/<int:user_id>', methods=['POST'])
 @login_required
 def add_friend(user_id):
-    if user_id == current_user.id:
-        flash("You can't add yourself as a friend.")
-        return redirect(url_for('profile', username=current_user.username))
-    existing = Friendship.query.filter_by(requester_id=current_user.id, receiver_id=user_id).first()
-    if existing:
-        flash("Friend request already sent.")
-    else:
-        friendship = Friendship(requester_id=current_user.id, receiver_id=user_id, status='pending')
-        db.session.add(friendship)
-        db.session.commit()
-        flash("Friend request sent!")
-    return redirect(url_for('profile', username=User.query.get(user_id).username))
+    try:
+        if user_id == current_user.id:
+            flash("You can't add yourself as a friend.")
+            return redirect(url_for('profile', username=current_user.username))
+        
+        target_user = User.query.get(user_id)
+        if not target_user:
+            flash("User not found.")
+            return redirect(url_for('editor'))
+            
+        existing = Friendship.query.filter_by(requester_id=current_user.id, receiver_id=user_id).first()
+        if existing:
+            flash("Friend request already sent.")
+        else:
+            try:
+                friendship = Friendship(requester_id=current_user.id, receiver_id=user_id, status='pending')
+                db.session.add(friendship)
+                db.session.commit()
+                flash("Friend request sent!")
+            except Exception as e:
+                db.session.rollback()
+                flash("Error sending friend request. Please try again.")
+        return redirect(url_for('profile', username=target_user.username))
+    except Exception as e:
+        flash("An error occurred. Please try again.")
+        return redirect(url_for('editor'))
 
 @app.route('/respond_friend/<int:friendship_id>/<action>', methods=['POST'])
 @login_required
 def respond_friend(friendship_id, action):
-    friendship = Friendship.query.get_or_404(friendship_id)
-    if friendship.receiver_id != current_user.id:
-        flash("Not authorized.")
+    try:
+        friendship = Friendship.query.get_or_404(friendship_id)
+        if friendship.receiver_id != current_user.id:
+            flash("Not authorized.")
+            return redirect(url_for('profile', username=current_user.username))
+            
+        if action not in ['accept', 'reject']:
+            flash("Invalid action.")
+            return redirect(url_for('profile', username=current_user.username))
+            
+        try:
+            if action == 'accept':
+                friendship.status = 'accepted'
+                flash("Friend request accepted!")
+            else:
+                friendship.status = 'rejected'
+                flash("Friend request rejected.")
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            flash("Error processing friend request. Please try again.")
         return redirect(url_for('profile', username=current_user.username))
-    if action == 'accept':
-        friendship.status = 'accepted'
-        flash("Friend request accepted!")
-    elif action == 'reject':
-        friendship.status = 'rejected'
-        flash("Friend request rejected.")
-    db.session.commit()
-    return redirect(url_for('profile', username=current_user.username))
+    except Exception as e:
+        flash("An error occurred. Please try again.")
+        return redirect(url_for('editor'))
 
 @app.route('/new_project', methods=['POST'])
 @login_required
