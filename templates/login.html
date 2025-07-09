@@ -2,8 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Login | LiveCode Editor</title>
+  <title>Login | CodeLitePad</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <style>
     body {
       background: linear-gradient(120deg, #4d6bff 0%, #6b47ff 100%);
@@ -94,8 +95,10 @@
 </head>
 <body>
   <div class="login-container">
-    <div class="icon"><i class="fas fa-sign-in-alt"></i></div>
-    <h2>Login</h2>
+    <div style="text-align: center; margin-bottom: 20px;">
+      <img src="{{ url_for('static', filename='images/logo.png') }}" alt="CodeLitePad Logo" style="width: 60px; height: 60px;">
+    </div>
+    <h2>Login to CodeLitePad</h2>
     {% with messages = get_flashed_messages() %}
       {% if messages %}
         <div class="flash-message">

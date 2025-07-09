@@ -22,3 +22,16 @@
 #userSearchResults div:hover {
   background: #f0f4ff;
 }
+
+.logo-img {
+  width: 40px;
+  height: 40px;
+  margin-right: 10px;
+}
+
+.logo-text {
+  font-size: 1.8rem;
+  color: #fff;
+  margin: 0;
+  font-weight: 600;
+}

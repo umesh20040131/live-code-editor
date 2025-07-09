@@ -2,13 +2,14 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>LiveCode Editor</title>
+  <title>CodeLitePad</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <!-- CodeMirror CSS -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/theme/dracula.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/hint/show-hint.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 
   <style>
     :root {
@@ -267,49 +268,46 @@
 <body>
   <div class="container">
     <header style="display: flex; align-items: center; justify-content: space-between;">
-  <div class="logo" style="display: flex; align-items: center;">
-    <i class="fas fa-code"></i>
-    <h2 style="margin-left: 8px;">Live HTML/CSS/JS Editor</h2>
-  </div>
-  <div style="display: flex; align-items: center; gap: 24px;">
-    <!-- Search bar goes here -->
-    <div class="user-search-bar" style="position: relative;">
-      <input type="text" id="userSearchInput" placeholder="Search users..." autocomplete="off"
-        style="padding:8px; border-radius:6px; border:1px solid #ccc; width:180px;">
-      <div id="userSearchResults"
-        style="background:#fff; border:1px solid #ccc; border-radius:6px; max-height:180px; overflow-y:auto; display:none; position:absolute; z-index:1000; min-width:180px;">
+      <div class="logo" style="display: flex; align-items: center;">
+        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="CodeLitePad Logo" class="logo-img">
+        <h2 class="logo-text">CodeLitePad</h2>
       </div>
+      <div style="display: flex; align-items: center; gap: 24px;">
+        <!-- Search bar goes here -->
+        <div class="user-search-bar" style="position: relative;">
+          <input type="text" id="userSearchInput" placeholder="Search users..." autocomplete="off"
+            style="padding:8px; border-radius:6px; border:1px solid #ccc; width:180px;">
+          <div id="userSearchResults"
+            style="background:#fff; border:1px solid #ccc; border-radius:6px; max-height:180px; overflow-y:auto; display:none; position:absolute; z-index:1000; min-width:180px;">
+          </div>
+        </div>
+        <!-- Auto-run toggle -->
+        <div class="auto-run-toggle" style="display: flex; align-items: center;">
+          <span style="color: #fff; margin-right: 8px;">Auto-run</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="autoRunToggle" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="friends-dropdown" style="position:relative; margin-right:18px;">
+    <div class="friends-list-dropdown" style="display:none; position:absolute; left:0; top:110%; background:#fff; color:#222; min-width:180px; border-radius:8px; box-shadow:0 4px 16px rgba(77,107,255,0.08); z-index:1000; border:1px solid #eee;">
+      {% if my_friends %}
+        <ul style="list-style:none; margin:0; padding:0;">
+          {% for friend in my_friends %}
+            <li style="padding:8px 12px; border-bottom:1px solid #f0f0f0;">
+              <a href="{{ url_for('profile', username=friend.username) }}" style="color:#4d6bff; text-decoration:none;">
+                <i class="fas fa-user"></i> {{ friend.username }}
+              </a>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <div style="padding:10px; color:#888;">No friends yet.</div>
+      {% endif %}
     </div>
-    <!-- Auto-run toggle -->
-    <div class="auto-run-toggle" style="display: flex; align-items: center;">
-      <span style="color: #fff; margin-right: 8px;">Auto-run</span>
-      <label class="toggle-switch">
-        <input type="checkbox" id="autoRunToggle" checked>
-        <span class="slider"></span>
-      </label>
-    </div>
-    <div class="friends-dropdown" style="position:relative; margin-right:18px;">
-  <button style="background:#6b47ff; color:#fff; border:none; border-radius:6px; padding:7px 16px; cursor:pointer; font-size:1rem;">
-    <i class="fas fa-users"></i> Friends
-  </button>
-  <div class="friends-list-dropdown" style="display:none; position:absolute; left:0; top:110%; background:#fff; color:#222; min-width:180px; border-radius:8px; box-shadow:0 4px 16px rgba(77,107,255,0.08); z-index:1000; border:1px solid #eee;">
-    {% if my_friends %}
-      <ul style="list-style:none; margin:0; padding:0;">
-        {% for friend in my_friends %}
-          <li style="padding:8px 12px; border-bottom:1px solid #f0f0f0;">
-            <a href="{{ url_for('profile', username=friend.username) }}" style="color:#4d6bff; text-decoration:none;">
-              <i class="fas fa-user"></i> {{ friend.username }}
-            </a>
-          </li>
-        {% endfor %}
-      </ul>
-    {% else %}
-      <div style="padding:10px; color:#888;">No friends yet.</div>
-    {% endif %}
   </div>
-</div>
-  </div>
-</header>
+      </div>
+    </header>
 
     <div style="margin-bottom: 10px;">
       <span>
